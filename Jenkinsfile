@@ -39,7 +39,7 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s.yaml'
+                sh 'kubectl rollout restart deployment my-app'
             }
         }
     }
