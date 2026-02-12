@@ -7,7 +7,7 @@ pipeline {
 
     stages {
 
-        stage('Clone Code') {
+        stage('Clone App Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/lokeshsomasundaram/my-app.git'
             }
@@ -16,10 +16,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Use Git commit hash for a unique tag
-                    def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                    env.IMAGE_TAG = commitHash
-                    sh "docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} ."
+                    COMMIT_HASH = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    sh "docker build -t ${DOCKER_IMAGE}:${COMMIT_HASH} ."
                 }
             }
         }
@@ -30,6 +28,7 @@ pipeline {
                     credentialsId: 'dockerhub', 
                     usernameVariable: 'USERNAME', 
                     passwordVariable: 'PASSWORD')]) {
+
                     sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
                 }
             }
@@ -37,29 +36,30 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                sh "docker push ${DOCKER_IMAGE}:${COMMIT_HASH}"
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy to k3s') {
             steps {
-                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                    sh """
-                    export KUBECONFIG=${KUBECONFIG_FILE}
-                    kubectl set image deployment/my-app my-app=${DOCKER_IMAGE}:${IMAGE_TAG} --record
+                // Retrieve kubeconfig from Infra pipeline
+                unstash 'k3s-config'
+
+                sh '''
+                    export KUBECONFIG=$WORKSPACE/k3s.yaml
+                    kubectl set image deployment/my-app my-app=${DOCKER_IMAGE}:${COMMIT_HASH} --record
                     kubectl rollout status deployment/my-app
-                    """
-                }
+                '''
             }
         }
     }
 
     post {
         success {
-            echo "✅ App deployed successfully with image tag: ${IMAGE_TAG}"
+            echo '✅ App deployed successfully!'
         }
         failure {
-            echo "❌ App deployment failed!"
+            echo '❌ App deployment failed!'
         }
     }
 }
