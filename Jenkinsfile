@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "lokeshs2612/my-app:latest"
+        DOCKER_IMAGE = "lokeshs2612/my-app:${BUILD_NUMBER}"
         K3S_SERVER   = "52.221.249.37"
     }
 
