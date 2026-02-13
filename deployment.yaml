@@ -4,6 +4,8 @@ metadata:
   name: my-app
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: my-app
@@ -15,6 +17,7 @@ spec:
       containers:
       - name: my-app
         image: lokeshs2612/my-app:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
 ---
