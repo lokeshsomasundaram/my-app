@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "lokeshs2612/my-app:latest"
+        K3S_SERVER   = "52.221.249.37"
     }
 
     stages {
@@ -32,11 +33,23 @@ pipeline {
             steps {
                 sshagent(['k3s-ssh']) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=no ubuntu@52.221.249.37 \
-                        "kubectl set image deployment/my-app my-app=$DOCKER_IMAGE"
+                        scp -o StrictHostKeyChecking=no deployment.yaml ubuntu@$K3S_SERVER:/home/ubuntu/
+
+                        ssh -o StrictHostKeyChecking=no ubuntu@$K3S_SERVER "
+                            kubectl apply -f /home/ubuntu/deployment.yaml
+                        "
                     '''
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Application deployed successfully!"
+        }
+        failure {
+            echo "❌ Deployment failed!"
         }
     }
 }
