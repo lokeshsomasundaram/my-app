@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "lokeshs2612/my-app:v1"
+        DOCKER_IMAGE = "lokeshs2612/my-app:latest"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/your-username/my-app.git'
+                git 'https://github.com/lokeshsomasundaram/my-app.git'
             }
         }
 
@@ -36,7 +36,7 @@ pipeline {
             steps {
                 sshagent(['k3s-ssh']) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=no ubuntu@18.141.182.89 \
+                        ssh -o StrictHostKeyChecking=no ubuntu@52.221.249.37 \
                         "kubectl set image deployment/my-app my-app=$DOCKER_IMAGE"
                     '''
                 }
